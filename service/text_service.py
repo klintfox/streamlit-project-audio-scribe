@@ -71,13 +71,17 @@ def generar_textos():
 def generar_documento():
     # Obtener la ruta de la carpeta desde el label
 
-    ruta_temp = os.path.join(BASE_PATH,"temp")  
-    carpeta_textos_minuto = os.path.join(BASE_PATH,"textos_minuto")
-    
+    carpeta_textos_minuto = os.path.join(BASE_PATH,"textos_minuto")    
+
     # Asegurarse de que la carpeta temp exista
-    if not os.path.exists(os.path.join(BASE_PATH,ruta_temp)):
-       os.makedirs(os.path.join(BASE_PATH,ruta_temp))    
+    # if not os.path.exists(os.path.join(BASE_PATH,ruta_temp)):
+    #    os.makedirs(os.path.join(BASE_PATH,ruta_temp))
+
+    if not os.path.exists(os.path.join(BASE_PATH,"temp")):
+        os.makedirs(os.path.join(BASE_PATH,"temp"))
     
+    ruta_temp = os.path.join(BASE_PATH,"temp")    
+
     # Ruta del archivo final donde se guardarán todas las transcripciones
     document_file_path = os.path.join(ruta_temp, "documentoGenerado.txt")
     
