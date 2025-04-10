@@ -55,20 +55,26 @@ def segmentar_audio(audio_file):
     ruta_audios_seg = os.path.join(BASE_PATH, "audios_seg")
     os.makedirs(ruta_audios_seg, exist_ok=True)
 
+    # Determinar la extensión según el tipo de archivo cargado
+    if audio_file.type == "audio/wav":
+        extension = ".wav"
+    elif audio_file.type == "audio/mpeg":
+        extension = ".mp3"
+    else:
+        st.error("❌ Formato de audio no compatible. Por favor, sube un archivo .wav o .mp3.")
+        return
+    
     try:
         # Guardar el archivo cargado como temporal
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as temp_file:
             temp_file.write(audio_file.getbuffer())
             temp_audio_path = temp_file.name
 
-        # Cargar el audio usando pydub
-        if audio_file.type == "audio/wav":
+        # Cargar el audio usando pydub según su tipo
+        if extension == ".wav":
             audio = AudioSegment.from_wav(temp_audio_path)
-        elif audio_file.type == "audio/mpeg":
+        else:  # .mp3
             audio = AudioSegment.from_mp3(temp_audio_path)
-        else:
-            st.error("❌ Formato de audio no compatible. Por favor, sube un archivo .wav o .mp3.")
-            return
 
         # Verificar que existan tiempos definidos
         if "times" not in st.session_state or not st.session_state.times:
