@@ -62,8 +62,13 @@ def segmentar_audio(audio_file):
             temp_file.write(audio_file.getbuffer())  # Guardamos el archivo cargado en el archivo temporal
             temp_audio_path = temp_file.name  # Ruta del archivo temporal
         
-        # Usamos pydub para cargar el archivo de audio
-        audio = AudioSegment.from_wav(temp_audio_path)
+        # Usamos pydub para cargar el archivo de audio        
+        if audio_file.type == "audio/wav":
+            audio = AudioSegment.from_wav(audio_file)
+        elif audio_file.type == "audio/mpeg":  # MIME type para mp3
+            audio = AudioSegment.from_mp3(audio_file)
+        else:
+            st.error("Formato de audio no compatible. Por favor, sube un archivo .wav o .mp3.")
 
         # Procesar cada segmento de la colección de tiempos
         for idx, (start_time_ms, end_time_ms) in enumerate(st.session_state.times):
