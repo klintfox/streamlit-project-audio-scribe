@@ -77,6 +77,13 @@ def add_interval_time():
         end_time_ms = time_to_milliseconds(hora_fin)
         st.session_state.times.append((start_time_ms, end_time_ms))
 
+
+# Función para limpiar el DataFrame
+def limpiar_dataframe():
+    st.session_state.data = pd.DataFrame({HORARIO_INICIO: [], HORARIO_FIN: []})  # Limpiar datos
+    st.session_state.times = []  # Limpiar la lista de times
+    st.success('Datos limpiados después de generar el documento')
+
 # Lógica de edición de filas
 def handle_row_deletion():
     edited_rows = st.session_state[DATA_EDITOR][DATA_ROWS]
@@ -192,17 +199,16 @@ def main():
                 btn_generar_documento = st.button(GENERATE_DOCUMENT_BUTTON, type=PRIMARY)
             
             if btn_segmentar_audio:
-                segmentar_audio(archivo_audio)                
+                with st.spinner(SPINNER_GENERATE_DOCUMENT):
+                    segmentar_audio(archivo_audio)   
+                    st.success(SPINNER_GENERATE_DOCUMENT_SUCCESS)             
             if btn_dividir_audio:
-                 #with st.spinner(SPINNER_DIVIDE_AUDIO):
                 dividir_audios()                    
-                #st.success(SPINNER_DIVIDE_AUDIO_SUCCESS)
             if btn_generar_texto:
                 generar_textos()
             if btn_generar_documento:
-                #with st.spinner(SPINNER_GENERATE_DOCUMENT):
                 generar_documento()
-                #    st.success(SPINNER_GENERATE_DOCUMENT_SUCCESS)
+                limpiar_dataframe()
 
     elif opcion == MENU_THREEE_TEXT_MANAGER:
         st.subheader(MENU_THREEE_TEXT_MANAGER)

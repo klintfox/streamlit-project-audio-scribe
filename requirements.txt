@@ -1,8 +1,10 @@
 # Librerías de terceros:
-streamlit==1.40.2        # Streamlit para la creación de la interfaz de usuario
-pandas==2.2.3            # Pandas para trabajar con datos tabulares
+streamlit==1.40.2
+pandas==2.2.3
+pydub==0.25.1
+speechrecognition==3.8.1
+python-gettext==5.0
+python-docx==0.8.11
+librosa==0.11.0
+soundfile==0.13.1
 #Pillow==11.0.0            # Pillow (PIL) para el procesamiento de imágenes
-pydub==0.25.1            # Pydub para trabajar con audios
-speechrecognition==3.8.1 # SpeechRecognition para la transcripción de audio a texto
-python-gettext==5.0    # gettext para la internacionalización (si es necesario)
-python-docx==0.8.11      # Para crear archivo docx

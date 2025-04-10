@@ -5,8 +5,11 @@ import subprocess
 
 # Imports de bibliotecas de terceros
 import logging
-from pydub import AudioSegment
 import streamlit as st
+##from pydub import AudioSegment
+import librosa
+import soundfile as sf
+
 
 # Own Imports
 from config import *
@@ -63,18 +66,15 @@ def segmentar_audio(audio_file):
     else:
         st.error("❌ Formato de audio no compatible. Por favor, sube un archivo .wav o .mp3.")
         return
-    
+
     try:
         # Guardar el archivo cargado como temporal
         with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as temp_file:
             temp_file.write(audio_file.getbuffer())
             temp_audio_path = temp_file.name
 
-        # Cargar el audio usando pydub según su tipo
-        if extension == ".wav":
-            audio = AudioSegment.from_wav(temp_audio_path)
-        else:  # .mp3
-            audio = AudioSegment.from_mp3(temp_audio_path)
+        # Cargar el audio como array NumPy
+        audio, sample_rate = librosa.load(temp_audio_path, sr=None)
 
         # Verificar que existan tiempos definidos
         if "times" not in st.session_state or not st.session_state.times:
@@ -94,32 +94,35 @@ def segmentar_audio(audio_file):
                     st.error(f"❌ El tiempo de inicio debe ser menor que el de fin para el segmento {idx + 1}.")
                     return
 
-                segment = audio[start_time_ms:end_time_ms]
+                # Convertir tiempos de milisegundos a muestras
+                start_sample = int((start_time_ms / 1000.0) * sample_rate)
+                end_sample = int((end_time_ms / 1000.0) * sample_rate)
+
+                segment = audio[start_sample:end_sample]
 
                 archivo_audio_output = f"segmento{idx + 1}.wav"
                 output_path = os.path.join(ruta_audios_seg, archivo_audio_output)
 
-                segment.export(output_path, format="wav")
+                # Guardar el segmento como archivo .wav
+                sf.write(output_path, segment, sample_rate)
 
                 # Actualiza contador regresivo
                 segmentos_restantes -= 1
                 contador_placeholder.write(f"🧩 Segmentos restantes: {segmentos_restantes}")
 
-            # Mostrar todos los mensajes una sola vez
             if info_messages:
                 st.success("✅ Segmentación completada exitosamente:")
                 st.markdown("\n".join(info_messages))
 
-            status.update(label="✅ Segmentación finalizada", state="complete")
+            status.update(label="✅ Segmentación finalizada", state="complete")        
 
-    except subprocess.CalledProcessError as e:
+    except Exception as e:
         if 'temp_audio_path' in locals():
             os.remove(temp_audio_path)
         st.error(f"❌ Error al procesar el archivo: {e}")
     finally:
         if 'temp_audio_path' in locals():
             os.remove(temp_audio_path)
-
 
 
 def dividir_audios():
@@ -139,8 +142,13 @@ def dividir_audios():
     # Contamos cuántos segmentos se generarán en total
     for filename in audio_files:
         audio_path = os.path.join(ruta_audios_seg, filename)
-        audio = AudioSegment.from_wav(audio_path)
+        audio, sample_rate = librosa.load(audio_path, sr=None)
         total_duration = len(audio)
+        
+        # Aquí calculamos el SEGMENT_DURATION en muestras (1 minuto)
+        SEGMENT_DURATION = 60 * sample_rate  # 1 minuto en muestras
+        
+        # Ahora calculamos cuántos segmentos se generarán
         num_segments = total_duration // SEGMENT_DURATION + (total_duration % SEGMENT_DURATION > 0)
         total_segmentos += num_segments
         total_files += 1  # Aumentamos el contador de archivos
@@ -153,19 +161,23 @@ def dividir_audios():
 
         for filename in audio_files:
             audio_path = os.path.join(ruta_audios_seg, filename)
-            audio = AudioSegment.from_wav(audio_path)
+            audio, sample_rate = librosa.load(audio_path, sr=None)
             total_duration = len(audio)
+            
+            # Calculamos el SEGMENT_DURATION en muestras (1 minuto)
+            SEGMENT_DURATION = 60 * sample_rate  # 1 minuto en muestras
+            
             num_segments = total_duration // SEGMENT_DURATION + (total_duration % SEGMENT_DURATION > 0)
 
             # Dividimos el archivo en segmentos
             for i in range(num_segments):
-                start_time = i * SEGMENT_DURATION
-                end_time = min((i + 1) * SEGMENT_DURATION, total_duration)
-                segment = audio[start_time:end_time]
+                start_sample = i * SEGMENT_DURATION
+                end_sample = min((i + 1) * SEGMENT_DURATION, total_duration)
+                segment = audio[start_sample:end_sample]
 
                 audio_seg_file = f"{filename[:-4]}_audio{i + 1}.wav"
                 output_path = os.path.join(ruta_audios_minuto, audio_seg_file)
-                segment.export(output_path, format="wav")
+                sf.write(output_path, segment, sample_rate)
 
                 # Actualizamos el contador de segmentos restantes
                 segmentos_restantes -= 1
@@ -173,4 +185,3 @@ def dividir_audios():
 
         # Finalizamos la operación
         status.update(label="✅ División de audios completada", state="complete")
-
