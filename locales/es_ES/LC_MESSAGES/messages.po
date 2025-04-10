@@ -1,0 +1,64 @@
+# -*- coding: utf-8 -*-
+# messages.po (locales/es_ES/LC_MESSAGES/messages.po)
+
+# Titulo
+msgid "app.title"
+msgstr "AudioScribe"
+
+# Menú
+msgid "menu.option.one"
+msgstr "Convertir archivo MP4 a WAV"
+
+msgid "menu.option.two"
+msgstr "Gestionar Audio"
+
+msgid "menu.option.three"
+msgstr "Generar Texto"
+
+# Sección "Convertir archivo MP4 a WAV"
+msgid "convert_mp4_to_wav.option"
+msgstr "Convertir archivo MP4 a WAV"
+
+msgid "convert_mp4_to_wav.select_video"
+msgstr "Seleccionar Video"
+
+msgid "convert_mp4_to_wav.process_button"
+msgstr "Procesar"
+
+msgid "convert_mp4_to_wav.file_too_large"
+msgstr "El archivo es demasiado grande. El tamaño máximo permitido es 1000 MB."
+
+msgid "convert_mp4_to_wav.file_details"
+msgstr "Detalles del archivo"
+
+msgid "convert_mp4_to_wav.name"
+msgstr "nombre_archivo"
+
+msgid "convert_mp4_to_wav.type"
+msgstr "tipo_archivo"
+
+msgid "convert_mp4_to_wav.size"
+msgstr "tamaño_archivo"
+
+# Sección "Gestionar Audio"
+msgid "manage_audio.option"
+msgstr "Gestionar Audio"
+
+msgid "manage_audio.select_audio"
+msgstr "Seleccionar Audio"
+
+msgid "manage_audio.segment_audio_button"
+msgstr "Segmentar Audio"
+
+msgid "manage_audio.split_audio_button"
+msgstr "Dividir Audios"
+
+msgid "manage_audio.generate_text_button"
+msgstr "Generar Textos"
+
+msgid "manage_audio.generate_document_button"
+msgstr "Generar Documento"
+
+# Sección "Generar Texto"
+msgid "generate_text.option"
+msgstr "Generar Texto"

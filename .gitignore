@@ -1,0 +1,53 @@
+# Entornos virtuales
+venv/
+env/
+.env/
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Archivos de configuración de IDEs
+.vscode/
+.idea/
+.spyderproject
+.ropeproject
+
+# Archivos de configuración de entorno
+.env
+.env.local
+
+# Archivos de dependencias (si usas un gestor como pipenv o poetry)
+Pipfile.lock
+.nox/
+.tox/
+.coverage/
+.hypothesis/
+
+# Archivos de logs
+*.log
+
+# Archivos de bases de datos locales (por ejemplo SQLite)
+*.sqlite3
+*.db
+
+# Archivos de build y distribución
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Archivos de caché
+.cache/
+.pip/
+
+# Archivos temporales y swap
+*~
+*.swp
+
+
+# Ignorar archivos .txt, .wav, .docx dentro de la carpeta resources y sus subcarpetas
+resources/**/*.txt
+resources/**/*.wav
+resources/**/*.docx

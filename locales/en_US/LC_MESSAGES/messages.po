@@ -1,0 +1,28 @@
+# Titulo
+app.title = "AudioScribe"
+
+# Menú
+menu.option.one = "Convert MP4 file to WAV"
+menu.option.two = "Manage Audio"
+menu.option.three = "Generate Text"
+
+# Sección "Convertir archivo MP4 a WAV"
+convert_mp4_to_wav.option = "Convert MP4 file to WAV"
+convert_mp4_to_wav.select_video = "Select Video"
+convert_mp4_to_wav.process_button = "Process"
+convert_mp4_to_wav.file_too_large = "The file is too large. The maximum allowed size is 1000 MB."
+convert_mp4_to_wav.file_details = "File details"
+convert_mp4_to_wav.name = "file_name"
+convert_mp4_to_wav.type = "file_type"
+convert_mp4_to_wav.size = "file_size"
+
+# Sección "Gestionar Audio"
+manage_audio.option = "Manage Audio"
+manage_audio.select_audio = "Select Audio"
+manage_audio.segment_audio_button = "Segment Audio"
+manage_audio.split_audio_button = "Split Audios"
+manage_audio.generate_text_button = "Generate Texts"
+manage_audio.generate_document_button = "Generate Document"
+
+# Sección "Generar Texto"
+generate_text.option = "Generate Text"
