@@ -1,7 +1,7 @@
 # constants.py
 
 # Título y menú
-APP_TITLE = "AudioScribe"
+APP_TITLE = "AudioScribe (Get the text from your audios)"
 MENU_ONE_CONVERT_AUDIO = "Convertir archivo MP4 a WAV"
 MENU_TWO_AUDIO_MANAGER = "Gestionar Audio"
 MENU_THREEE_TEXT_MANAGER = "Generar Texto"
