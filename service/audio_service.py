@@ -49,102 +49,122 @@ def process_video(video_file):
 
 def segmentar_audio(audio_file):
     if not audio_file:
-        st.error("Error, por favor carga un archivo de audio primero.")
+        st.error("❌ Error, por favor carga un archivo de audio primero.")
         return
-    
-    # Asegurarnos de que la carpeta de salida exista
-    if not os.path.exists(os.path.join(BASE_PATH,"audios_seg")):
-        os.makedirs(os.path.join(BASE_PATH,"audios_seg"))
-    
-    try:            
-        # Guardar el archivo cargado como un archivo temporal para poder procesarlo
+
+    ruta_audios_seg = os.path.join(BASE_PATH, "audios_seg")
+    os.makedirs(ruta_audios_seg, exist_ok=True)
+
+    try:
+        # Guardar el archivo cargado como temporal
         with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
-            temp_file.write(audio_file.getbuffer())  # Guardamos el archivo cargado en el archivo temporal
-            temp_audio_path = temp_file.name  # Ruta del archivo temporal
-        
-        # Usamos pydub para cargar el archivo de audio        
+            temp_file.write(audio_file.getbuffer())
+            temp_audio_path = temp_file.name
+
+        # Cargar el audio usando pydub
         if audio_file.type == "audio/wav":
-            audio = AudioSegment.from_wav(audio_file)
-        elif audio_file.type == "audio/mpeg":  # MIME type para mp3
-            audio = AudioSegment.from_mp3(audio_file)
+            audio = AudioSegment.from_wav(temp_audio_path)
+        elif audio_file.type == "audio/mpeg":
+            audio = AudioSegment.from_mp3(temp_audio_path)
         else:
-            st.error("Formato de audio no compatible. Por favor, sube un archivo .wav o .mp3.")
+            st.error("❌ Formato de audio no compatible. Por favor, sube un archivo .wav o .mp3.")
+            return
 
-        # Procesar cada segmento de la colección de tiempos
-        for idx, (start_time_ms, end_time_ms) in enumerate(st.session_state.times):
-            if start_time_ms >= end_time_ms:
-                return st.error(f"El tiempo de inicio debe ser menor que el de fin para el segmento {idx + 1}.")
-            
-            # Cortar el segmento del audio según los tiempos proporcionados
-            segment = audio[start_time_ms:end_time_ms]  # Cortamos el segmento de audio en milisegundos
+        # Verificar que existan tiempos definidos
+        if "times" not in st.session_state or not st.session_state.times:
+            st.error("❌ No se han definido los tiempos de segmentación.")
+            return
 
-            # Definir el nombre del archivo de salida
-            archivo_audio_output = f"audios_seg/segmento{idx + 1}.wav"
-            
-            # Construir la ruta completa usando BASE_PATH
-            output_path = os.path.join(BASE_PATH, archivo_audio_output)
+        total_segmentos = len(st.session_state.times)
+        segmentos_restantes = total_segmentos
+        info_messages = []
 
-            # Guardar el segmento como un nuevo archivo
-            segment.export(output_path, format="wav")
+        with st.status("✂️ Segmentando audio...", expanded=True) as status:
+            contador_placeholder = st.empty()
+            contador_placeholder.write(f"🧩 Segmentos restantes: {segmentos_restantes}")
 
-            st.info(f"Segmento {idx + 1} guardado en: {archivo_audio_output}")                    
+            for idx, (start_time_ms, end_time_ms) in enumerate(st.session_state.times):
+                if start_time_ms >= end_time_ms:
+                    st.error(f"❌ El tiempo de inicio debe ser menor que el de fin para el segmento {idx + 1}.")
+                    return
+
+                segment = audio[start_time_ms:end_time_ms]
+
+                archivo_audio_output = f"segmento{idx + 1}.wav"
+                output_path = os.path.join(ruta_audios_seg, archivo_audio_output)
+
+                segment.export(output_path, format="wav")
+
+                # Actualiza contador regresivo
+                segmentos_restantes -= 1
+                contador_placeholder.write(f"🧩 Segmentos restantes: {segmentos_restantes}")
+
+            # Mostrar todos los mensajes una sola vez
+            if info_messages:
+                st.success("✅ Segmentación completada exitosamente:")
+                st.markdown("\n".join(info_messages))
+
+            status.update(label="✅ Segmentación finalizada", state="complete")
 
     except subprocess.CalledProcessError as e:
-        # En caso de error, aseguramos la eliminación del archivo temporal:
         if 'temp_audio_path' in locals():
             os.remove(temp_audio_path)
-        st.error(f"Ocurrió un error al procesar el archivo: {e}")
+        st.error(f"❌ Error al procesar el archivo: {e}")
     finally:
-        # Eliminar el archivo temporal después de procesarlo
         if 'temp_audio_path' in locals():
             os.remove(temp_audio_path)
+
 
 
 def dividir_audios():
-    ruta_audios_seg = os.path.join(BASE_PATH,"audios_seg")  # Carpeta de entrada donde están los archivos segmentados
-    
+    ruta_audios_seg = os.path.join(BASE_PATH, "audios_seg")  # Carpeta de entrada
+    ruta_audios_minuto = os.path.join(BASE_PATH, "audios_minuto")  # Carpeta de salida
+
     # Asegurarnos de que la carpeta de salida exista
-    output_dir = os.path.join(BASE_PATH, "audios_minuto")
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    
-    ruta_audios_minuto = os.path.join(BASE_PATH,"audios_minuto")  # Carpeta donde se guardarán los segmentos de 1 minuto
-    
-    try:                       
-        # Iterar sobre los archivos en la carpeta 'audios_seg'
-        for filename in os.listdir(ruta_audios_seg):
-            if filename.startswith("segmento") and filename.endswith(".wav"):
-                # Cargar el archivo de audio
-                audio_path = os.path.join(ruta_audios_seg, filename)
-                audio = AudioSegment.from_wav(audio_path)
+    os.makedirs(ruta_audios_minuto, exist_ok=True)
 
-                total_duration = len(audio)  # Duración total del archivo en milisegundos
-                
-                # Calcular el número de segmentos de 1 minuto
-                num_segments = total_duration // SEGMENT_DURATION + (total_duration % SEGMENT_DURATION > 0)
+    total_segmentos = 0
+    total_files = 0  # Contador de archivos
+    audio_files = [
+        f for f in os.listdir(ruta_audios_seg)
+        if f.startswith("segmento") and f.endswith(".wav")
+    ]
 
-                # Dividir el archivo de audio en segmentos de 1 minuto
-                for i in range(num_segments):
-                    start_time = i * SEGMENT_DURATION
-                    end_time = min((i + 1) * SEGMENT_DURATION, total_duration)
-                    
-                    # Extraer el segmento
-                    segment = audio[start_time:end_time]
-                    
-                    # Definir el nombre del archivo de salida
-                    audio_seg_file = f"{filename[:-4]}_audio{i + 1}.wav"
+    # Contamos cuántos segmentos se generarán en total
+    for filename in audio_files:
+        audio_path = os.path.join(ruta_audios_seg, filename)
+        audio = AudioSegment.from_wav(audio_path)
+        total_duration = len(audio)
+        num_segments = total_duration // SEGMENT_DURATION + (total_duration % SEGMENT_DURATION > 0)
+        total_segmentos += num_segments
+        total_files += 1  # Aumentamos el contador de archivos
 
-                    # Guardar el segmento en la carpeta 'audios_minuto'
-                    output_path = os.path.join(ruta_audios_minuto, audio_seg_file)
-                    segment.export(output_path, format="wav")
+    # Iniciamos la división de los audios
+    with st.status("🔄 Dividiendo audios en segmentos de 1 minuto...", expanded=True) as status:
+        contador_placeholder = st.empty()  # Este será el espacio donde mostraremos la actualización del contador
 
-                    # Mostrar mensaje de éxito para cada segmento
-                    st.info(f"Segmento {i + 1} guardado como: {audio_seg_file}")
-    
-    except FileNotFoundError as e:
-        logging.error(f"Error: {e}")
-        st.error(f"Error: {e}")
-    except Exception as e:
-        logging.error(f"Ocurrió un error inesperado: {e}")
-        st.error(f"Ocurrió un error inesperado: {e}")        
+        segmentos_restantes = total_segmentos  # Iniciamos el contador de segmentos restantes
+
+        for filename in audio_files:
+            audio_path = os.path.join(ruta_audios_seg, filename)
+            audio = AudioSegment.from_wav(audio_path)
+            total_duration = len(audio)
+            num_segments = total_duration // SEGMENT_DURATION + (total_duration % SEGMENT_DURATION > 0)
+
+            # Dividimos el archivo en segmentos
+            for i in range(num_segments):
+                start_time = i * SEGMENT_DURATION
+                end_time = min((i + 1) * SEGMENT_DURATION, total_duration)
+                segment = audio[start_time:end_time]
+
+                audio_seg_file = f"{filename[:-4]}_audio{i + 1}.wav"
+                output_path = os.path.join(ruta_audios_minuto, audio_seg_file)
+                segment.export(output_path, format="wav")
+
+                # Actualizamos el contador de segmentos restantes
+                segmentos_restantes -= 1
+                contador_placeholder.write(f"🧩 Audios Divididos restantes: {segmentos_restantes}")
+
+        # Finalizamos la operación
+        status.update(label="✅ División de audios completada", state="complete")
 

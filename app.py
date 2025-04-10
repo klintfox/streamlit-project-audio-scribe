@@ -192,21 +192,17 @@ def main():
                 btn_generar_documento = st.button(GENERATE_DOCUMENT_BUTTON, type=PRIMARY)
             
             if btn_segmentar_audio:
-                with st.spinner(SPINNER_SEGMENT_AUDIO):
-                    segmentar_audio(archivo_audio)                
-                st.success(SPINNER_SEGMENT_AUDIO_SUCCESS)
+                segmentar_audio(archivo_audio)                
             if btn_dividir_audio:
-                 with st.spinner(SPINNER_DIVIDE_AUDIO):
-                    dividir_audios()                    
-                    st.success(SPINNER_DIVIDE_AUDIO_SUCCESS)
+                 #with st.spinner(SPINNER_DIVIDE_AUDIO):
+                dividir_audios()                    
+                #st.success(SPINNER_DIVIDE_AUDIO_SUCCESS)
             if btn_generar_texto:
-                with st.spinner(SPINNER_GENERATE_TEXT):
-                    generar_textos()
-                    st.success(SPINNER_GENERATE_TEXT_SUCCESS)
+                generar_textos()
             if btn_generar_documento:
-                with st.spinner(SPINNER_GENERATE_DOCUMENT):
-                    generar_documento()
-                    st.success(SPINNER_GENERATE_DOCUMENT_SUCCESS)
+                #with st.spinner(SPINNER_GENERATE_DOCUMENT):
+                generar_documento()
+                #    st.success(SPINNER_GENERATE_DOCUMENT_SUCCESS)
 
     elif opcion == MENU_THREEE_TEXT_MANAGER:
         st.subheader(MENU_THREEE_TEXT_MANAGER)

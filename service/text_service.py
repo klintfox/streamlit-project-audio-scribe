@@ -5,77 +5,84 @@ import os
 import streamlit as st
 import speech_recognition as sr
 from docx import Document
+import shutil
 
 # Own Imports
 from config import *
 
 def generar_textos():
-
-    ruta_audios_minuto = os.path.join(BASE_PATH,"audios_minuto")
+    ruta_audios_minuto = os.path.join(BASE_PATH, "audios_minuto")
 
     # Asegurarnos de que la carpeta de salida exista
-    if not os.path.exists(os.path.join(BASE_PATH,"textos_minuto")):
-        os.makedirs(os.path.join(BASE_PATH,"textos_minuto"))
-    
-    carpeta_textos_minuto = os.path.join(BASE_PATH,"textos_minuto")
-    
+    carpeta_textos_minuto = os.path.join(BASE_PATH, "textos_minuto")
+    os.makedirs(carpeta_textos_minuto, exist_ok=True)
+
     notification_messages = []
     error_messages = []
+    info_messages = []
+
     try:
-        # Crea un objeto Recognizer
-        recognizer = sr.Recognizer()   
+        recognizer = sr.Recognizer()
+        audio_files = [f for f in os.listdir(ruta_audios_minuto) if f.endswith('.wav')]
+        total_audios = len(audio_files)
 
-        # Obtener todos los archivos de audio en la carpeta audios_seg
-        audio_files = [f for f in os.listdir(ruta_audios_minuto) if f.endswith('.wav')]            
-        st.info(f"Número de Audios: {len(audio_files)}")
+        with st.status(SPINNER_GENERATE_TEXT, expanded=True) as status:
+            # Placeholder dinámico para mostrar el número de audios pendientes
+            contador_placeholder = st.empty()
+            contador_placeholder.write(f"🎧 Textos pendientes: {total_audios}")
 
-        # Asi ocurra un error el bucle seguirá con el siguiente audio
-        for audio_file in audio_files:
-            audio_minuto_file_path = os.path.join(ruta_audios_minuto, audio_file)                
-            with sr.AudioFile(audio_minuto_file_path) as source:
-                audio_data = recognizer.record(source)                    
+            for index, audio_file in enumerate(audio_files, start=1):
+                audio_minuto_file_path = os.path.join(ruta_audios_minuto, audio_file)
 
-            try:
-                # Reconocimiento de voz con idioma español
-                text = recognizer.recognize_google(audio_data, language=RECOGNITION_LANGUAGE)                
+                try:
+                    with sr.AudioFile(audio_minuto_file_path) as source:
+                        audio_data = recognizer.record(source)
 
-                # Guardar el texto en un archivo en la carpeta de transcripciones
-                text_file_name = os.path.splitext(audio_file)[0] + ".txt"
-                text_file_path = os.path.join(carpeta_textos_minuto, text_file_name)
-                with open(text_file_path, "w", encoding="utf-8") as text_file:
-                    text_file.write(text)
+                    text = recognizer.recognize_google(audio_data, language=RECOGNITION_LANGUAGE)
 
-                st.info(f"El audio: {audio_file} ha sido procesado y se generó el texto en: {text_file_path}")
-            except sr.UnknownValueError:
-                notification_messages.append(f"No se pudo entender el audio '{audio_file}'.")                
-            except sr.RequestError as e:                    
-                error_messages.append(f"No se pudo solicitar resultados de Google Speech Recognition para '{audio_file}'; {e}")
-            except FileNotFoundError as e:
-                error_messages.append(f"Error al procesar el archivo '{audio_file}': {e}")                    
+                    # Guardar texto
+                    text_file_name = os.path.splitext(audio_file)[0] + ".txt"
+                    text_file_path = os.path.join(carpeta_textos_minuto, text_file_name)
 
-        # Mostrar los mensajes de notificación o error
-        if notification_messages:
-            for message in notification_messages:
-                st.warning(message)
-        
-        if error_messages:
-            for message in error_messages:
-                st.error(message)
+                    with open(text_file_path, "w", encoding="utf-8") as text_file:
+                        text_file.write(text)
 
-    except FileNotFoundError:                
-        st.error("Errores: ",error_messages)
+                except sr.UnknownValueError:
+                    notification_messages.append(f"No se pudo entender el audio '{audio_file}'.")
+                except sr.RequestError as e:
+                    error_messages.append(f"No se pudo solicitar resultados de Google Speech Recognition para '{audio_file}'; {e}")
+                except FileNotFoundError as e:
+                    error_messages.append(f"Error al procesar el archivo '{audio_file}': {e}")
+
+                # Actualizar contador de audios pendientes
+                audios_restantes = total_audios - index
+                contador_placeholder.write(f"🎧 Textos pendientes: {audios_restantes}")
+
+            # Mostrar resultados
+            if info_messages:
+                st.success("✅ Audios procesados exitosamente:")
+                st.markdown("\n".join(info_messages))
+
+            if notification_messages:
+                st.warning("⚠️ Algunos audios no pudieron ser entendidos:")
+                st.markdown("\n".join(notification_messages))
+
+            if error_messages:
+                st.error("❌ Errores encontrados durante el procesamiento:")
+                st.markdown("\n".join(error_messages))
+
+            status.update(label="✅ Generacion de Textos completado", state="complete")
+
+    except FileNotFoundError:
+        st.error("❌ Carpeta de audios no encontrada.")
     except Exception as e:
-        st.error(f"Ocurrió un error inesperado: {e}")
+        st.error(f"🚨 Error inesperado: {e}")
     
 
 def generar_documento():
     # Obtener la ruta de la carpeta desde el label
 
-    carpeta_textos_minuto = os.path.join(BASE_PATH,"textos_minuto")    
-
-    # Asegurarse de que la carpeta temp exista
-    # if not os.path.exists(os.path.join(BASE_PATH,ruta_temp)):
-    #    os.makedirs(os.path.join(BASE_PATH,ruta_temp))
+    carpeta_textos_minuto = os.path.join(BASE_PATH,"textos_minuto")
 
     if not os.path.exists(os.path.join(BASE_PATH,"temp")):
         os.makedirs(os.path.join(BASE_PATH,"temp"))
@@ -101,14 +108,33 @@ def generar_documento():
                     with open(text_file_path, "r", encoding="utf-8") as file:
                         # Escribir el contenido de cada archivo de texto en el archivo final
                         contenido = file.read()
-                        final_file.write(contenido + "\n\n")
-                        #final_file.write(file.read() + "\n")  # Agregar un salto de línea entre transcripciones
+                        final_file.write(contenido + "\n\n")                        
+
                 except Exception as e:
                     st.error(f"No se pudo leer el archivo '{text_file}': {e}")
-                    continue  # Si hay un error al leer el archivo, seguir con el siguiente archivo
+                    continue  # Si hay un error al leer el archivo, seguir con el siguiente archivo            
+        
+        # Después de generar el documento, eliminar los archivos en las carpetas
+        carpetas_a_limpiar = [
+            os.path.join(BASE_PATH, "audios_minuto"),
+            os.path.join(BASE_PATH, "audios_seg"),
+            os.path.join(BASE_PATH, "textos_minuto")
+        ]
+        
+        for carpeta in carpetas_a_limpiar:
+            if os.path.exists(carpeta):
+                for filename in os.listdir(carpeta):
+                    file_path = os.path.join(carpeta, filename)
+                    try:
+                        if os.path.isfile(file_path):
+                            os.remove(file_path)  # Elimina el archivo
+                        elif os.path.isdir(file_path):
+                            shutil.rmtree(file_path)  # Elimina directorios (si hay alguno)
+                    except Exception as e:
+                        st.error(f"No se pudo eliminar el archivo o directorio '{file_path}': {e}")
+        
+        st.success(SPINNER_GENERATE_DOCUMENT_SUCCESS)
 
-        # Confirmar que el documento se generó correctamente
-        #st.success(f"Documento generado con éxito: {document_file_path}")
     except Exception as e:
         # Manejo general de excepciones
         st.error(f"Ocurrió un error inesperado al generar el documento: {e}")
@@ -173,8 +199,7 @@ def mostrar_descargar_documento():
 
         # Sección separada para los botones de descarga
         st.markdown("<hr>", unsafe_allow_html=True)  # Línea horizontal para separar visualmente
-        st.subheader("Opciones de descarga")
-        # Crear columnas para los botones de descarga        
+        st.subheader("Próximamente...")        
         
         # Aquí podrías tener un botón de análisis o alguna otra funcionalidad        
         st.button("Analizar Texto")
